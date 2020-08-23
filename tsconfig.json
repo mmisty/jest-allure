@@ -5,12 +5,13 @@
     "suppressImplicitAnyIndexErrors": false,
     "baseUrl": "./",
     "paths": {
-       "jest-allure/*": ["./*"]
+      "jest-allure/*": ["./*"]
     },
     "target": "es6",
     "outDir": "dist",
     "module": "commonjs",
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "typeRoots": ["node_modules/@types"]
   }
 }
