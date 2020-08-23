@@ -1,13 +1,14 @@
 {
   "name": "jest-allure-mmisty",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Allure Reports for jest",
   "main": "dist/index",
+  "types": "dist/index.d.ts",
   "repository": "git@github.com:mmisty/jest-allure.git",
-  "author": "Denis Artyuhovich (zaqqaz) <i@denis.by>",
+  "author": "Taisia Pitko (mmisty) <minydas@yandex.ru>",
   "license": "MIT",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "pretty-quick && tsc",
     "build": "tsc",
     "fmt": "pretty-quick"
   },
