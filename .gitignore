@@ -25,3 +25,6 @@ dist
 
 # Misc
 .DS_Store
+
+# test
+allure-results

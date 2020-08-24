@@ -9,10 +9,13 @@ import {
   Attachment,
   ExecutableItemWrapper,
   Status,
-} from "allure-js-commons";
-import stripAnsi from "strip-ansi";
-import { Reporter } from "./Reporter";
-import { relative } from "path";
+  Category,
+  LabelName,
+  TestResultContainer,
+} from 'allure-js-commons';
+import stripAnsi from 'strip-ansi';
+import { Reporter } from './Reporter';
+import { relative } from 'path';
 
 declare namespace jasmine {
   function getEnv(): any;
@@ -36,13 +39,13 @@ declare namespace jasmine {
 }
 
 enum SpecStatus {
-  PASSED = "passed",
-  FAILED = "failed",
-  BROKEN = "broken",
-  PENDING = "pending",
-  DISABLED = "disabled",
-  EXCLUDED = "excluded",
-  TODO = "todo",
+  PASSED = 'passed',
+  FAILED = 'failed',
+  BROKEN = 'broken',
+  PENDING = 'pending',
+  DISABLED = 'disabled',
+  EXCLUDED = 'excluded',
+  TODO = 'todo',
 }
 
 class AllureImpl extends Allure {
@@ -50,6 +53,9 @@ class AllureImpl extends Allure {
   private runningTest: AllureTest | null = null;
   private runningGroup: AllureGroup | null = null;
   public runningExecutable: ExecutableItemWrapper | null = null;
+  private groupStack: AllureGroup[] = [];
+  private groupNameStack: string[] = [];
+
   constructor(runtime: AllureRuntime) {
     super(runtime);
     this.runtime = runtime;
@@ -57,7 +63,7 @@ class AllureImpl extends Allure {
 
   get currentTest(): AllureTest {
     if (this.runningTest === null) {
-      throw new Error("No active test");
+      throw new Error('No active test');
     }
 
     return this.runningTest;
@@ -65,25 +71,38 @@ class AllureImpl extends Allure {
 
   get currentExecutable(): ExecutableItemWrapper {
     if (this.runningExecutable === null) {
-      throw new Error("No active executable");
+      throw new Error('No active executable');
     }
 
     return this.runningExecutable;
   }
 
-  startGroup(name?: string) {
+  startGroup(name: string) {
     this.runningGroup = this.runtime.startGroup(name);
+    let nameGr = name;
+
+    for (let i = 0; i < this.groupStack.length + 1; i++) {
+      if (this.groupStack.length > i) {
+        for (let j = 0; j <= i; j++) {
+          nameGr = name.replace(this.groupStack[j].name, '');
+        }
+      }
+    }
+
+    this.groupNameStack.push(nameGr);
+    this.groupStack.push(this.runningGroup);
   }
 
   startTest(name?: string) {
     if (!this.runningGroup) {
-      throw new Error("No runningGroup");
+      throw new Error('No runningGroup');
     }
+
     this.runningTest = this.runningGroup.startTest(name);
   }
   endTest(spec: any) {
     if (!this.runningTest) {
-      throw new Error("No runningTest");
+      throw new Error('No runningTest');
     }
 
     if (spec.status === SpecStatus.PASSED) {
@@ -109,7 +128,7 @@ class AllureImpl extends Allure {
     ) {
       this.runningTest.status = Status.SKIPPED;
       this.runningTest.stage = Stage.PENDING;
-      this.runningTest.detailsMessage = spec.pendingReason || "Suite disabled";
+      this.runningTest.detailsMessage = spec.pendingReason || 'Suite disabled';
     }
 
     // Capture exceptions
@@ -117,35 +136,103 @@ class AllureImpl extends Allure {
       this.findMessageAboutThrow(spec.failedExpectations) ||
       this.findAnyError(spec.failedExpectations);
 
-    if (exceptionInfo !== null && typeof exceptionInfo.message === "string") {
+    if (exceptionInfo !== null && typeof exceptionInfo.message === 'string') {
       let { message } = exceptionInfo;
 
-      message = stripAnsi(message);
+      message = message;
 
-      this.runningTest.detailsMessage = stripAnsi(message);
+      this.runningTest.detailsMessage = message;
 
-      if (exceptionInfo.stack && typeof exceptionInfo.stack === "string") {
+      if (exceptionInfo.stack && typeof exceptionInfo.stack === 'string') {
         let { stack } = exceptionInfo;
 
-        stack = stripAnsi(stack);
-        stack = stack.replace(message, "");
+        stack = stack;
+        stack = stack.replace(message, '');
 
         this.runningTest.detailsTrace = stack;
       }
     }
 
+    this.runningTest.addLink('http://test.com', 'BBB');
+    this.runningTest.addLabel('label', 'dsdsd');
+    this.runningTest.addParameter('param 1', spec.testPath);
+    this.runningTest.addParameter('param 2', '5');
+    this.runningTest.addParameter('param 3', 'minydas@ya.ru');
+    this.runningTest.fullName = spec.fullName;
+    this.feature('asdad');
+    this.epic('asdasdsd');
+    this.epic('asdasdsd444');
+
+    this.applyGroupping();
+
+    this.issue('issueID', 'http://minydas.ru');
+    this.tag('TAGGG');
+
+    this.runningTest.description =
+      "desctiption test asdasdasd ```l,;l;l,;l,``` l,sa,s;das\\ndssadfa'";
+
     this.runningTest.endTest();
   }
-  endGroup() {
+  private substractSuiteName(groupStack: string[]): string[] {
+    const stack = [...groupStack];
+    for (let i = 0; i < groupStack.length; i++) {
+      if (i > 0) {
+        for (let j = 1; j < i; j++) {
+          //stack[i].name = stack[i].name.substr(groupStack[j-1].name.length);
+        }
+      }
+    }
+    return stack;
+  }
+
+  private applyGroupping() {
     if (!this.runningGroup) {
-      throw new Error("No runningGroup");
+      throw new Error('no runningGroup');
+    }
+    const groups = this.substractSuiteName(this.groupNameStack);
+    if (groups.length > 0) {
+      this.parentSuite(groups[0]);
+      //this.runningTest.addLabel(LabelName.PARENT_SUITE, this.groupStack[0].name);
     }
 
+    if (groups.length > 1) {
+      this.suite(groups[1]);
+      //this.runningTest.addLabel(LabelName.PARENT_SUITE, this.groupStack[0].name);
+    }
+
+    if (groups.length > 2) {
+      this.subSuite(groups.slice(2).join('>>'));
+      // this.runningTest.addLabel(LabelName.SUITE, this.groupStack[1].name);
+    }
+
+    if (groups.length > 3) {
+      // this.subSuite(groups[3].name)
+      //this.runningTest.addLabel(LabelName.SUB_SUITE, this.groupStack[2].name);
+    }
+  }
+  writeCategoriesDefinitions(categories: Category[]) {
+    super.writeCategoriesDefinitions(categories);
+  }
+
+  endGroup() {
+    if (!this.runningGroup) {
+      throw new Error('No runningGroup');
+    }
+
+    this.runtime.writeGroup({
+      name: this.runningGroup.name,
+      uuid: this.runningGroup.uuid,
+      befores: [],
+      afters: [],
+      children: [],
+    });
+    this.groupStack.pop();
+    this.groupNameStack.pop();
     this.runningGroup.endGroup();
   }
   private findMessageAboutThrow(expectations?: any[]): any | null {
     for (const expectation of expectations || []) {
-      if (expectation.matcherName === "") {
+      if (expectation.matcherName === '') {
         return expectation;
       }
     }
@@ -163,7 +250,7 @@ class AllureImpl extends Allure {
   }
 
   public step<T>(name: string, body: (step: StepInterface) => any): any {
-    console.log("step:", name);
+    console.log('step:', name);
     /*const wrappedStep = this.startStep(name);
         let result;
 
@@ -196,9 +283,9 @@ class AllureImpl extends Allure {
   public logStep(
     name: string,
     status: Status,
-    attachments?: [Attachment]
+    attachments?: [Attachment],
   ): void {
-    console.log("AllureImpl status:", status);
+    console.log('AllureImpl status:', status);
 
     /*const wrappedStep = this.startStep(name);
 
@@ -232,7 +319,7 @@ class JasmineAllureReporter implements jasmine.CustomReporter {
     } else {
       // case for tests without suite
       this.allure.startGroup(
-        relative(process.cwd(), (expect as any).getState().testPath)
+        relative(process.cwd(), (expect as any).getState().testPath),
       );
     }
   }
@@ -248,7 +335,7 @@ class JasmineAllureReporter implements jasmine.CustomReporter {
   }
 
   specDone(spec: jasmine.CustomReporterResult) {
-    let error;
+    /*let error;
     if (spec.status === "pending") {
       error = { message: spec.pendingReason };
     }
@@ -264,7 +351,7 @@ class JasmineAllureReporter implements jasmine.CustomReporter {
         message: stripAnsi(failure.message),
         stack: stripAnsi(failure.stack),
       };
-    }
+    }*/
     this.allure.endTest(spec);
     //this.allure.run
     //this.allure..endCase(spec.status as jest.Status, error);
@@ -273,11 +360,11 @@ class JasmineAllureReporter implements jasmine.CustomReporter {
 
 export function registerAllureReporter() {
   const config = {
-    resultsDir: "allure-results",
+    resultsDir: 'allure-results',
   };
   const runtime = new AllureRuntime(config);
   const reporter = ((global as any).reporter = new JasmineAllureReporter(
-    runtime
+    runtime,
   ));
   jasmine.getEnv().addReporter(reporter);
 }

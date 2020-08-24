@@ -1,6 +1,5 @@
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
-import {dateStr} from "../date-utils";
-
+import { dateStr } from '../examples-2/date-utils';
 
 function simpleFormatter(type: LogType, message: LogMessage): string {
   const TITLE_INDENT = '    ';

@@ -7,7 +7,7 @@
     "paths": {
       "jest-allure/*": ["./*"]
     },
-    "target": "es6",
+    "target": "esnext",
     "outDir": "dist",
     "module": "commonjs",
     "esModuleInterop": true,

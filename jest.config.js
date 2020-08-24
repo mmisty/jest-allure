@@ -7,7 +7,8 @@ module.exports = {
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|js)x?$',
   setupFilesAfterEnv: [
     './config/jest.setup.ts',
-    'jest-allure-mmisty/dist/setup',
+    './src/setup.ts',
+    //    '../dist/setup'
   ],
   coverageDirectory: 'coverage',
   collectCoverageFrom: ['src/**/*.{ts,tsx,js,jsx}', '!src/**/*.d.ts'],
