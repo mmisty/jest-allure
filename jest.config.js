@@ -4,7 +4,7 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|js)x?$',
+  testRegex: '((\\.|/)(test|spec))\\.(ts)x?$',
   setupFilesAfterEnv: [
     './config/jest.setup.ts',
     './src/setup.ts',
